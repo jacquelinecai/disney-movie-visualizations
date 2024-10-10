@@ -58,18 +58,17 @@
                     release_date: month
                 };
             });
-            // Step 1: Calculate total revenue for each genre
+
             const genreTotals = d3.rollups(
                 transformedMovies,
                 v => d3.sum(v, d => d.total_gross),
                 d => d.genre
             );
 
-            // Step 2: Sort genres by total revenue in descending order
             const sortedGenres = genreTotals
                 .filter(([genre, _]) => genre)
-                .sort((a, b) => b[1] - a[1]) // Sort by total revenue descending
-                .map(d => d[0]); // Get only the genre names in sorted order
+                .sort((a, b) => b[1] - a[1])
+                .map(d => d[0]);
 
             const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -79,9 +78,8 @@
                 d => d.release_date
             );
 
-            // Step 3: Use sortedGenres to order the stack
             const stackedData = d3.stack()
-                .keys(sortedGenres) // Use the sorted genre order
+                .keys(sortedGenres)
                 .value((d, key) => d[1].get(key) || 0)(groupedData);
 
             const margin = { top: 20, right: 200, bottom: 60, left: 80 },
