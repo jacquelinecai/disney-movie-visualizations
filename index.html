@@ -9,11 +9,30 @@
 </head>
 <body>
 <h1></h1>
+<svg id="barGraph" width="800" height="500"></svg>
 <p id="p1">
     testing testing 123 :D
 </p> 
 <script>
+    d3.csv("disney_movies.csv", d3.autoType).then((data) => {
+        console.log(data);
+        const filteredMovies = data.filter(movie => {
+            const releaseYear = new Date(movie.release_date).getFullYear();
+            return releaseYear >= 2000 && movie.total_gross > 0;
+        })
 
+        const transformedMovies = filteredMovies.map(movie => {
+            const releaseDate = new Date(movie.release_date);
+            const month = releaseDate.toLocaleString('default', { month: 'long' }); 
+            return {
+                ...movie,
+                release_date: month 
+            };
+        });
+        console.log(transformedMovies);
+    }).catch(error => {
+        console.log('Error:', error);
+    })
 
 </script>
 
