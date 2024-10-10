@@ -14,7 +14,6 @@
 </p> 
 <script>
     d3.csv("disney_movies.csv", d3.autoType).then((data) => {
-        console.log(data);
         const filteredMovies = data.filter(movie => {
             const releaseYear = new Date(movie.release_date).getFullYear();
             return releaseYear >= 2000 && movie.total_gross > 0;
@@ -29,6 +28,7 @@
             };
         });
         console.log(transformedMovies);
+        const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
 
         const genres = Array.from(new Set(transformedMovies.map(movie => movie.genre)));
         const months = Array.from(new Set(transformedMovies.map(movie => movie.release_date)));
