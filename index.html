@@ -1,61 +1,184 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8" />
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
+        h1 {
+            margin-left: 50px;
+            font-family: 'Helvetica', Arial, sans-serif;
+            font-weight: bold;
+        }
 
+        .axis text {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12px;
+        }
+
+        .legend text {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 14px;
+        }
+
+        .axis line,
+        .axis path {
+            stroke: #000;
+        }
+
+        .grid line {
+            stroke: lightgray;
+            stroke-opacity: 0.7;
+            shape-rendering: crispEdges;
+        }
+
+        .legend rect {
+            width: 18px;
+            height: 18px;
+            margin-right: 5px;
+        }
     </style>
 </head>
+
 <body>
-<h1></h1>
-<svg id="barGraph" width="800" height="500"></svg>
-<p id="p1">
-</p> 
-<script>
-    d3.csv("disney_movies.csv", d3.autoType).then((data) => {
-        const filteredMovies = data.filter(movie => {
-            const releaseYear = new Date(movie.release_date).getFullYear();
-            return releaseYear >= 2000 && movie.total_gross > 0;
-        })
+    <h1>Movie Revenue by Genre and Release Month</h1>
+    <svg id="barGraph" width="900" height="500"></svg>
+    <script>
+        d3.csv("disney_movies.csv", d3.autoType).then((data) => {
+            const filteredMovies = data.filter(movie => {
+                const releaseYear = new Date(movie.release_date).getFullYear();
+                return releaseYear >= 2000 && movie.total_gross > 0;
+            });
 
-        const transformedMovies = filteredMovies.map(movie => {
-            const releaseDate = new Date(movie.release_date);
-            const month = releaseDate.toLocaleString('default', { month: 'long' }); 
-            return {
-                ...movie,
-                release_date: month 
-            };
+            const transformedMovies = filteredMovies.map(movie => {
+                const releaseDate = new Date(movie.release_date);
+                const month = releaseDate.toLocaleString('default', { month: 'short' });
+                return {
+                    ...movie,
+                    release_date: month
+                };
+            });
+            // Step 1: Calculate total revenue for each genre
+            const genreTotals = d3.rollups(
+                transformedMovies,
+                v => d3.sum(v, d => d.total_gross),
+                d => d.genre
+            );
+
+            // Step 2: Sort genres by total revenue in descending order
+            const sortedGenres = genreTotals
+                .filter(([genre, _]) => genre)
+                .sort((a, b) => b[1] - a[1]) // Sort by total revenue descending
+                .map(d => d[0]); // Get only the genre names in sorted order
+
+            const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+            const groupedData = d3.rollups(
+                transformedMovies,
+                v => d3.rollup(v, g => d3.sum(g, d => d.total_gross), d => d.genre),
+                d => d.release_date
+            );
+
+            // Step 3: Use sortedGenres to order the stack
+            const stackedData = d3.stack()
+                .keys(sortedGenres) // Use the sorted genre order
+                .value((d, key) => d[1].get(key) || 0)(groupedData);
+
+            const margin = { top: 20, right: 200, bottom: 60, left: 80 },
+                width = 800 - margin.left - margin.right,
+                height = 500 - margin.top - margin.bottom;
+
+            const svg = d3.select("#barGraph")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const xScale = d3.scaleBand()
+                .domain(monthOrder)
+                .range([0, width])
+                .padding(0.2);
+
+            const yScale = d3.scaleLinear()
+                .domain([0, d3.max(stackedData, d => d3.max(d, d => d[1]))])
+                .nice()
+                .range([height, 0]);
+
+            const customColors = [
+                "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728",
+                "#9467bd", "#8c564b", "#e377c2", "#7f7f7f",
+                "#BCC54D", "#17becf", "#000000", "#EBC621"
+            ];
+
+            const colorScale = d3.scaleOrdinal()
+                .domain(sortedGenres)
+                .range(customColors);
+
+            svg.append("g")
+                .selectAll("g")
+                .data(stackedData)
+                .enter().append("g")
+                .attr("fill", d => colorScale(d.key))
+                .selectAll("rect")
+                .data(d => d)
+                .enter().append("rect")
+                .attr("x", d => xScale(d.data[0]))
+                .attr("y", d => yScale(d[1]))
+                .attr("height", d => yScale(d[0]) - yScale(d[1]))
+                .attr("width", xScale.bandwidth());
+
+            svg.append("g")
+                .attr("class", "axis")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(xScale))
+                .append("text")
+                .attr("x", width / 2)
+                .attr("y", 40)
+                .attr("fill", "#000")
+                .attr("text-anchor", "middle")
+                .style("font-size", "18px")
+                .text("Months");
+
+            svg.append("g")
+                .attr("class", "axis")
+                .call(d3.axisLeft(yScale).tickFormat(d3.format("$.2s")))
+                .append("text")
+                .attr("x", -height / 2)
+                .attr("y", -60)
+                .attr("fill", "#000")
+                .attr("text-anchor", "middle")
+                .attr("transform", "rotate(-90)")
+                .style("font-size", "18px")
+                .text("Revenue");
+
+            svg.append("g")
+                .attr("class", "grid")
+                .call(d3.axisLeft(yScale)
+                    .tickSize(-width)
+                    .tickFormat("")
+                );
+
+            const legend = svg.append("g")
+                .attr("transform", `translate(${width + 20}, 0)`);
+
+            sortedGenres.forEach((genre, i) => {
+                const legendRow = legend.append("g")
+                    .attr("transform", `translate(0, ${i * 20})`);
+
+                legendRow.append("rect")
+                    .attr("fill", colorScale(genre))
+                    .attr("width", 18)
+                    .attr("height", 18);
+
+                legendRow.append("text")
+                    .attr("x", 25)
+                    .attr("y", 12)
+                    .text(genre);
+            });
+        }).catch(error => {
+            console.log('Error:', error);
         });
-        console.log(transformedMovies);
-        const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+    </script>
+</body>
 
-        const genres = Array.from(new Set(transformedMovies.map(movie => movie.genre)));
-        const months = Array.from(new Set(transformedMovies.map(movie => movie.release_date)));
-
-        const groupedData = d3.rollups(
-            transformedMovies,
-            v => d3.rollup(v, g => d3.sum(g, d => d.total_gross), d => d.genre),
-            d => d.release_date)
-
-        const stackedData = d3.stack()
-            .keys(genres)
-            .value((d, key) => d[1].get(key) || 0)(groupedData);
-
-        console.log(stackedData);
-
-
-
-    }).catch(error => {
-        console.log('Error:', error);
-    })
-
-</script>
-
-<p id ='p2'>
-<script>
-
-</script>
-</p> 
-</body> 
 </html>
