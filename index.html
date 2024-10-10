@@ -178,6 +178,7 @@
         });
     </script>
     <p>
+        <h1> Disney Movie Scatterplot: Revenue and MPAA Rating</h1>
         <svg id="scatterPlot" width="1000" height="500"></svg>
     </p>
     <script>
@@ -215,15 +216,19 @@
                 .attr("cy", d => yScale(d.total_gross))
                 .attr("r", 4)
                 .attr("fill", d => colorScale(d.mpaa_rating))
-                .attr("opacity", 0.7);
+                .attr("opacity", 0.75);
 
             svg.append("g")
                 .attr("class", "axis")
                 .attr("transform", `translate(0,${height})`)
                 .call(d3.axisBottom(xScale).tickFormat("").tickSize(0))
-                .selectAll("text")
-                .attr("transform", "rotate(45)")
-                .style("text-anchor", "start");
+                .append('text')
+                .attr('x', width / 2)
+                .attr('y', 40)
+                .attr('text-anchor', 'middle')
+                .attr('fill', '#000')
+                .style('font-size', '18px')
+                .text('Release Date (Earliest to Latest)');
 
             svg.append("g")
                 .attr("class", "axis")
@@ -258,6 +263,7 @@
         }).catch(error => {
             console.log('Error:', error);
         });
+
     </script>
     <h1>Disney Movie Heatmap: Revenue and Genre</h1>
     <svg id="heatmap" width="1000" height="600"></svg>
@@ -377,7 +383,7 @@
         });
     </script>
     <p>
-        <h1>Disney Movie Line Graph</h1>
+        <h1>Disney Movie Line Graph: Revenue and Release Month</h1>
         <svg id="lineGraph" width="960" height="500"></svg>
     </p>
     <script>
@@ -421,14 +427,20 @@
                 .range([height, 0]);
     
             // Sequential color scale with shades of blue
-            const colorScale = d3.scaleSequential(d3.interpolateBlues)
-            .domain([0, d3.max(nestedData, d => d3.sum(d[1], m => m.total_gross))]);
+            // const colorScale = d3.scaleSequential(d3.interpolateBlues)
+            // .domain([0, d3.max(nestedData, d => d3.sum(d[1], m => m.total_gross))]);
+            // const customColors = ['#C72C41', '#32CD32', '#A77BCA', '#FFA500' ];
+
+            // const colorScale = d3.scaleOrdinal()
+            //     .domain(filteredYears)
+            //     .range(customColors);
+            const colorScale = d3.scaleOrdinal(d3.schemeSet3)
+            .domain(filteredYears); 
 
             const opacityScale = d3.scaleLinear()
             .domain([0, d3.max(nestedData, d => d3.sum(d[1], m => m.total_gross))])
             .range([0.2, 1]);
     
-            // X Axis
             svg.append("g")
                 .attr("transform", `translate(0,${height})`)
                 .call(d3.axisBottom(xScale).ticks(12).tickFormat(d3.format("d")))
@@ -441,7 +453,6 @@
                 .style("font-size", "18px")
                 .text('Month');
     
-            // Y Axis
             svg.append("g")
                 .call(d3.axisLeft(yScale).tickFormat(d3.format(".2s")))
                 .style("font-size", "12px")
@@ -454,10 +465,9 @@
                 .style("font-size", "18px")
                 .text("Revenue");
                                                                                   
-            // Area generator
             const area = d3.area()
                 .x(d => xScale(d.release_month))
-                .y0(height) // Base line at the bottom
+                .y0(height) 
                 .y1(d => yScale(d.total_gross));
     
         
@@ -469,7 +479,7 @@
                 .attr("d", d => area(d[1]))
                 .style("fill", d => colorScale(d3.sum(d[1], m => m.total_gross)))
                 .style("opacity", d => opacityScale(d3.sum(d[1], m => m.total_gross)))
-                .style("stroke", d => d3.color(colorScale(d3.sum(d[1], m => m.total_gross))).darker(2)) // Slightly darker stroke color
+                .style("stroke", d => d3.color(colorScale(d3.sum(d[1], m => m.total_gross))).darker(2)) 
             .style("stroke-width", 1.5);
 
             const legendData = [
