@@ -177,6 +177,98 @@
             console.log('Error:', error);
         });
     </script>
+    <p>
+        <svg id="scatterPlot" width="1000" height="500"></svg>
+    </p>
+<script>
+
+
+d3.csv("disney_movies.csv", d3.autoType).then((data) => {
+            const filteredData = data.filter(movie => {
+                const releaseYear = new Date(movie.release_date).getFullYear();
+                return releaseYear >= 2000 && movie.total_gross > 0 && movie.mpaa_rating;
+            });
+
+            const margin = { top: 20, right: 150, bottom: 60, left: 100 },
+                width = 800 - margin.left - margin.right,
+                height = 500 - margin.top - margin.bottom;
+
+            const svg = d3.select("#scatterPlot")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const months = [...new Set(filteredData.map(d => new Date(d.release_date).toLocaleString('default', { month: 'short' })))];
+
+            const xScale = d3.scaleBand()
+                .domain(months)
+                .range([0, width])
+                .padding(0.5);
+
+            const yScale = d3.scaleLinear()
+                .domain([0, d3.max(filteredData, d => d.total_gross)])
+                .nice()
+                .range([height, 0]);
+
+            const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+            svg.selectAll("circle")
+                .data(filteredData)
+                .enter()
+                .append("circle")
+                .attr("cx", d => xScale(new Date(d.release_date).toLocaleString('default', { month: 'short' })) + xScale.bandwidth() / 2)
+                .attr("cy", d => yScale(d.total_gross))
+                .attr("r", 8)
+                .attr("fill", d => colorScale(d.mpaa_rating))
+                .attr("opacity", 0.7);
+
+            svg.append("g")
+                .attr("class", "axis")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(xScale).tickSize(0))
+                .append("text")
+                .attr("x", width / 2)
+                .attr("y", 40)
+                .attr("fill", "#000")
+                .attr("text-anchor", "middle")
+                .style("font-size", "18px")
+                .text("Months");
+
+            svg.append("g")
+                .attr("class", "axis")
+                .call(d3.axisLeft(yScale).tickFormat(d3.format("$.2s")))
+                .append("text")
+                .attr("x", -height / 2)
+                .attr("y", -60)
+                .attr("fill", "#000")
+                .attr("text-anchor", "middle")
+                .attr("transform", "rotate(-90)")
+                .style("font-size", "18px")
+                .text("Revenue");
+
+            const legend = svg.append("g")
+                .attr("transform", `translate(${width + 30}, 20)`);
+
+            const uniqueRatings = [...new Set(filteredData.map(d => d.mpaa_rating))];
+            uniqueRatings.forEach((rating, i) => {
+                const legendRow = legend.append("g")
+                    .attr("transform", `translate(0, ${i * 20})`);
+
+                legendRow.append("rect")
+                    .attr("fill", colorScale(rating))
+                    .attr("width", 18)
+                    .attr("height", 18);
+
+                legendRow.append("text")
+                    .attr("x", 25)
+                    .attr("y", 12)
+                    .text(rating);
+            });
+        }).catch(error => {
+            console.log('Error:', error);
+        });
+    </script>
 </body>
 
 </html>
