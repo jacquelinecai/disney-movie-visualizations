@@ -377,6 +377,7 @@
         });
     </script>
     <p>
+        <h1>Disney Movie Line Graph</h1>
         <svg id="lineGraph" width="960" height="500"></svg>
     </p>
     <script>
@@ -421,22 +422,38 @@
     
             // Sequential color scale with shades of blue
             const colorScale = d3.scaleSequential(d3.interpolateBlues)
-                .domain([0, d3.max(filteredData, d => d3.sum(nestedData.find(nd => nd[0] === d.release_year)[1], m => m.total_gross))]);
+            .domain([0, d3.max(nestedData, d => d3.sum(d[1], m => m.total_gross))]);
 
             const opacityScale = d3.scaleLinear()
-                .domain([0, d3.max(filteredData, d => d3.sum(nestedData.find(nd => nd[0] === d.release_year)[1], m => m.total_gross))])
-                .range([0.2, 1]);
+            .domain([0, d3.max(nestedData, d => d3.sum(d[1], m => m.total_gross))])
+            .range([0.2, 1]);
     
             // X Axis
             svg.append("g")
                 .attr("transform", `translate(0,${height})`)
-                .call(d3.axisBottom(xScale).ticks(12).tickFormat(d3.format("d")));
+                .call(d3.axisBottom(xScale).ticks(12).tickFormat(d3.format("d")))
+                .style("font-size", "12px")
+                .append("text")
+                .attr("x", width / 2)
+                .attr("y", 40)
+                .attr("fill", "#000")
+                .attr("text-anchor", "middle")
+                .style("font-size", "18px")
+                .text('Month');
     
             // Y Axis
             svg.append("g")
-                .call(d3.axisLeft(yScale))
-                .style("font-size", "12px");
-    
+                .call(d3.axisLeft(yScale).tickFormat(d3.format(".2s")))
+                .style("font-size", "12px")
+                .append("text")
+                .attr("x", -height / 2)
+                .attr("y", -50)
+                .attr("fill", "#000")
+                .attr("text-anchor", "middle")
+                .attr("transform", "rotate(-90)")
+                .style("font-size", "18px")
+                .text("Revenue");
+                                                                                  
             // Area generator
             const area = d3.area()
                 .x(d => xScale(d.release_month))
