@@ -11,7 +11,6 @@
 <h1></h1>
 <svg id="barGraph" width="800" height="500"></svg>
 <p id="p1">
-    testing testing 123 :D
 </p> 
 <script>
     d3.csv("disney_movies.csv", d3.autoType).then((data) => {
@@ -30,6 +29,25 @@
             };
         });
         console.log(transformedMovies);
+
+        const genres = Array.from(new Set(transformedMovies.map(movie => movie.genre)));
+        const months = Array.from(new Set(transformedMovies.map(movie => movie.release_date)));
+
+        const groupedData = d3.rollups(
+            transformedMovies,
+            v => d3.rollup(v, g => d3.sum(g, d => d.total_gross), d => d.genre),
+            d => d.release_date)
+
+        const stackedData = d3.stack()
+            .keys(genres)
+            .value((d, key) => d[1].get(key) || 0)(groupedData);
+
+        console.log(stackedData);
+
+        const colorScale = d3.scaleOrdinal()
+            .domain(genres)
+            .range(d3.schemeTableau10);
+
     }).catch(error => {
         console.log('Error:', error);
     })
@@ -40,7 +58,6 @@
 <script>
 
 </script>
-testing again
 </p> 
 </body> 
 </html>
