@@ -180,10 +180,8 @@
     <p>
         <svg id="scatterPlot" width="1000" height="500"></svg>
     </p>
-<script>
-
-
-d3.csv("disney_movies.csv", d3.autoType).then((data) => {
+    <script>
+        d3.csv("disney_movies.csv", d3.autoType).then((data) => {
             const filteredData = data.filter(movie => {
                 const releaseYear = new Date(movie.release_date).getFullYear();
                 return releaseYear >= 2000 && movie.total_gross > 0 && movie.mpaa_rating;
@@ -261,8 +259,123 @@ d3.csv("disney_movies.csv", d3.autoType).then((data) => {
             console.log('Error:', error);
         });
     </script>
+    <h1>Disney Movie Heatmap: Revenue and Genre</h1>
+    <svg id="heatmap" width="1000" height="600"></svg>
+    <script>
+        d3.csv("disney_movies.csv", d3.autoType).then((data) => {
+            const filteredData = data.filter(d => d.genre);
+            const genreCounts = d3.rollups(
+                filteredData,
+                v => v.length,
+                d => d.genre
+            ).sort((a, b) => b[1] - a[1]);
+
+            const sortedGenres = genreCounts.map(d => d[0]);
+
+            const customColors = [
+                "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728",
+                "#9467bd", "#8c564b", "#e377c2", "#7f7f7f",
+                "#BCC54D", "#17becf", "#000000", "#EBC621"
+            ];
+
+            const colorScale = d3.scaleOrdinal()
+                .domain(sortedGenres)
+                .range(customColors);
+
+            const maxRevenue = d3.max(data, d => d.total_gross);
+            const opacityScale = d3.scaleLinear()
+                .domain([0, maxRevenue])
+                .range([0.3, 1]);
+
+            const sortedData = filteredData.sort((a, b) => b.total_gross - a.total_gross);
+            const moviesPerRow = 30;
+            const cellSize = 15;
+
+            const svg = d3.select("#heatmap");
+
+            sortedData.forEach((movie, index) => {
+                const xPos = (index % moviesPerRow) * cellSize + 50;
+                const yPos = Math.floor(index / moviesPerRow) * cellSize + 50;
+
+                svg.append("rect")
+                    .attr("x", xPos)
+                    .attr("y", yPos)
+                    .attr("width", cellSize)
+                    .attr("height", cellSize)
+                    .attr("fill", colorScale(movie.genre))
+                    .attr("fill-opacity", opacityScale(movie.total_gross))
+                    .attr("class", "heatmap");
+            });
+
+            const totalSquares = Math.ceil(sortedData.length / moviesPerRow) * moviesPerRow;
+            for (let i = sortedData.length; i < totalSquares; i++) {
+                const xPos = (i % moviesPerRow) * cellSize + 50;
+                const yPos = Math.floor(i / moviesPerRow) * cellSize + 50;
+
+                svg.append("rect")
+                    .attr("x", xPos)
+                    .attr("y", yPos)
+                    .attr("width", cellSize)
+                    .attr("height", cellSize)
+                    .attr("fill", "#f0f0f0")
+                    .attr("class", "heatmap");
+            }
+
+            const legend = svg.append("g")
+                .attr("transform", `translate(${moviesPerRow * cellSize + 70}, 50)`);
+
+            sortedGenres.forEach((genre, i) => {
+                const legendRow = legend.append("g")
+                    .attr("transform", `translate(0, ${i * 20})`);
+
+                legendRow.append("rect")
+                    .attr("fill", colorScale(genre))
+                    .attr("width", 18)
+                    .attr("height", 18);
+
+                legendRow.append("text")
+                    .attr("x", 25)
+                    .attr("y", 14)
+                    .text(genre);
+            });
+
+            const opacityLegend = svg.append("g")
+                .attr("transform", `translate(${moviesPerRow * cellSize + 70}, ${sortedGenres.length * 20 + 90})`);
+
+            const step = maxRevenue / 20;
+            d3.range(0, maxRevenue, step).forEach((d, i) => {
+                opacityLegend.append("rect")
+                    .attr("x", i * (200 / 20))
+                    .attr("width", 200 / 20)
+                    .attr("height", 10)
+                    .attr("fill", "#333")
+                    .attr("fill-opacity", opacityScale(d));
+            });
+
+            svg.append("text")
+                .attr("x", moviesPerRow * cellSize + 70)
+                .attr("y", sortedGenres.length * 20 + 80)
+                .text("Revenue (Opacity)")
+                .attr("class", "legend text");
+
+            svg.append("text")
+                .attr("x", 50 + (moviesPerRow * cellSize) / 2)
+                .attr("y", 40)
+                .text("Revenue decreases →")
+                .attr("class", "axis-label")
+                .style("text-anchor", "middle");
+
+            svg.append("text")
+                .attr("x", 35)
+                .attr("y", 50 + ((totalSquares / moviesPerRow) * cellSize) / 2)
+                .text("← Revenue decreases")
+                .attr("class", "axis-label")
+                .style("text-anchor", "middle")
+                .attr("transform", `rotate(-90, 35, ${50 + ((totalSquares / moviesPerRow) * cellSize) / 2})`);
+        }).catch(error => {
+            console.log('Error:', error);
+        });
+    </script>
 </body>
-
-
 
 </html>
