@@ -376,6 +376,116 @@
             console.log('Error:', error);
         });
     </script>
-</body>
+    <p>
+        <svg id="lineGraph" width="960" height="500"></svg>
+    </p>
+    <script>
+        d3.csv('disney_movies.csv', d3.autoType).then((data) => {
+            const filteredMovies = data.filter(movie => {
+                const releaseYear = new Date(movie.release_date).getFullYear();
+                return releaseYear >= 2000 && movie.total_gross > 0;
+            });
+    
+            const yearMovies = filteredMovies.map(movie => {
+                const releaseDate = new Date(movie.release_date);
+                return {
+                    ...movie,
+                    release_year: releaseDate.getFullYear(),
+                    release_month: releaseDate.getMonth() + 1 // +1 because months are zero-indexed
+                };
+            });
+    
+            const filteredYears = [2000, 2005, 2010, 2015];
+            const filteredData = yearMovies.filter(d => filteredYears.includes(d.release_year));
+    
+            const nestedData = d3.groups(filteredData, d => d.release_year);
 
+            nestedData.sort((a, b) => 
+            d3.sum(b[1], m => m.total_gross) - d3.sum(a[1], m => m.total_gross)
+            );
+    
+            const margin = { top: 50, right: 150, bottom: 50, left: 80 };
+            const width = 960 - margin.left - margin.right;
+            const height = 500 - margin.top - margin.bottom;
+    
+            const svg = d3.select("#lineGraph")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+    
+            const xScale = d3.scaleLinear().domain([1, 12]).range([0, width]);
+            const yScale = d3.scaleLinear()
+                .domain([0, d3.max(filteredData, d => d.total_gross)])
+                .range([height, 0]);
+    
+            // Sequential color scale with shades of blue
+            const colorScale = d3.scaleSequential(d3.interpolateBlues)
+                .domain([0, d3.max(filteredData, d => d3.sum(nestedData.find(nd => nd[0] === d.release_year)[1], m => m.total_gross))]);
+
+            const opacityScale = d3.scaleLinear()
+                .domain([0, d3.max(filteredData, d => d3.sum(nestedData.find(nd => nd[0] === d.release_year)[1], m => m.total_gross))])
+                .range([0.2, 1]);
+    
+            // X Axis
+            svg.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(xScale).ticks(12).tickFormat(d3.format("d")));
+    
+            // Y Axis
+            svg.append("g")
+                .call(d3.axisLeft(yScale))
+                .style("font-size", "12px");
+    
+            // Area generator
+            const area = d3.area()
+                .x(d => xScale(d.release_month))
+                .y0(height) // Base line at the bottom
+                .y1(d => yScale(d.total_gross));
+    
+        
+            svg.selectAll(".area")
+                .data(nestedData)
+                .enter()
+                .append("path")
+                .attr("class", "area")
+                .attr("d", d => area(d[1]))
+                .style("fill", d => colorScale(d3.sum(d[1], m => m.total_gross)))
+                .style("opacity", d => opacityScale(d3.sum(d[1], m => m.total_gross)))
+                .style("stroke", d => d3.color(colorScale(d3.sum(d[1], m => m.total_gross))).darker(2)) // Slightly darker stroke color
+            .style("stroke-width", 1.5);
+
+            const legendData = [
+            { year: "2000", color: colorScale(d3.sum(nestedData.find(d => d[0] === 2000)[1], m => m.total_gross)) },
+            { year: "2005", color: colorScale(d3.sum(nestedData.find(d => d[0] === 2005)[1], m => m.total_gross)) },
+            { year: "2010", color: colorScale(d3.sum(nestedData.find(d => d[0] === 2010)[1], m => m.total_gross)) },
+            { year: "2015", color: colorScale(d3.sum(nestedData.find(d => d[0] === 2015)[1], m => m.total_gross)) },
+            ];
+    
+            // Legend
+            const legend = svg.selectAll(".legend")
+            .data(legendData)
+            .enter()
+            .append("g")
+            .attr("transform", (d, i) => `translate(${width + 20}, ${i * 25})`);
+
+            legend.append("rect")
+                .attr("x", 0)
+                .attr("y", 0)
+                .attr("width", 20)
+                .attr("height", 20)
+                .style("fill", d => d.color)
+                .style("opacity", d => d.opacity);
+
+            legend.append("text")
+                .attr("x", 30)
+                .attr("y", 15)
+                .text(d => d.year)
+                .style("font-size", "12px")
+                .style("alignment-baseline", "middle");
+        }).catch(error => {
+            console.log('Error:', error);
+        });
+    </script>
+</body>
 </html>
