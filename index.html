@@ -189,7 +189,7 @@ d3.csv("disney_movies.csv", d3.autoType).then((data) => {
                 return releaseYear >= 2000 && movie.total_gross > 0 && movie.mpaa_rating;
             });
 
-            const margin = { top: 20, right: 150, bottom: 60, left: 100 },
+            const margin = { top: 20, right: 150, bottom: 60, left: 80 },
                 width = 800 - margin.left - margin.right,
                 height = 500 - margin.top - margin.bottom;
 
@@ -199,12 +199,9 @@ d3.csv("disney_movies.csv", d3.autoType).then((data) => {
                 .append("g")
                 .attr("transform", `translate(${margin.left},${margin.top})`);
 
-            const months = [...new Set(filteredData.map(d => new Date(d.release_date).toLocaleString('default', { month: 'short' })))];
-
-            const xScale = d3.scaleBand()
-                .domain(months)
-                .range([0, width])
-                .padding(0.5);
+            const xScale = d3.scaleTime()
+                .domain(d3.extent(filteredData, d => new Date(d.release_date)))
+                .range([0, width]);
 
             const yScale = d3.scaleLinear()
                 .domain([0, d3.max(filteredData, d => d.total_gross)])
@@ -215,25 +212,20 @@ d3.csv("disney_movies.csv", d3.autoType).then((data) => {
 
             svg.selectAll("circle")
                 .data(filteredData)
-                .enter()
-                .append("circle")
-                .attr("cx", d => xScale(new Date(d.release_date).toLocaleString('default', { month: 'short' })) + xScale.bandwidth() / 2)
+                .join("circle")
+                .attr("cx", d => xScale(new Date(d.release_date)))
                 .attr("cy", d => yScale(d.total_gross))
-                .attr("r", 8)
+                .attr("r", 4)
                 .attr("fill", d => colorScale(d.mpaa_rating))
                 .attr("opacity", 0.7);
 
             svg.append("g")
                 .attr("class", "axis")
                 .attr("transform", `translate(0,${height})`)
-                .call(d3.axisBottom(xScale).tickSize(0))
-                .append("text")
-                .attr("x", width / 2)
-                .attr("y", 40)
-                .attr("fill", "#000")
-                .attr("text-anchor", "middle")
-                .style("font-size", "18px")
-                .text("Months");
+                .call(d3.axisBottom(xScale).tickFormat("").tickSize(0))
+                .selectAll("text")
+                .attr("transform", "rotate(45)")
+                .style("text-anchor", "start");
 
             svg.append("g")
                 .attr("class", "axis")
@@ -270,5 +262,7 @@ d3.csv("disney_movies.csv", d3.autoType).then((data) => {
         });
     </script>
 </body>
+
+
 
 </html>
