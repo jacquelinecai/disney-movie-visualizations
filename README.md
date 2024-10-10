@@ -8,3 +8,9 @@ This bar chart visualizes Disney movies' total gross revenue per month, stacked 
 
 ### Disney Movie Ratings Scatterplot
 This scatterplot utilizes the ratings of movies from the top 3 grossing months from the previous visualization to understand how the target audience of certain Disney movies impacts the revenue. Each point in the scatterplot will be marked as a circle, color-coded based on the rating (P, PG, R, etc.).
+
+### Disney Movie Genre and Revenue Heatmap
+This heatmap explores the genres that generate the most revenue, sorted by the highest to the lowest revenue. The squares are color-coded based on the genre.
+
+<img width="733" alt="image" src="https://github.com/user-attachments/assets/ce46332a-8fef-4897-a3c7-199c2cd71035">
+
