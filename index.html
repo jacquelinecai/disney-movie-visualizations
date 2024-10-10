@@ -29,11 +29,7 @@
             };
         });
         console.log(transformedMovies);
-        const genresSet = new Set(transformedMovies.map(d => d.genre));
-        const genresArray = Array.from(genresSet);
-        const color = d3.scaleOrdinal()
-            .domain(genresArray)
-            .range(d3.schemeCategory10);
+        const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
     }).catch(error => {
         console.log('Error:', error);
     })
