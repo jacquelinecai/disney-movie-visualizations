@@ -21,11 +21,6 @@
             font-size: 14px;
         }
 
-        .axis line,
-        .axis path {
-            stroke: #000;
-        }
-
         .grid line {
             stroke: lightgray;
             stroke-opacity: 0.7;
@@ -128,7 +123,7 @@
             svg.append("g")
                 .attr("class", "axis")
                 .attr("transform", `translate(0,${height})`)
-                .call(d3.axisBottom(xScale))
+                .call(d3.axisBottom(xScale).tickSizeOuter(0))
                 .append("text")
                 .attr("x", width / 2)
                 .attr("y", 40)
@@ -139,7 +134,7 @@
 
             svg.append("g")
                 .attr("class", "axis")
-                .call(d3.axisLeft(yScale).tickFormat(d3.format("$.2s")))
+                .call(d3.axisLeft(yScale).tickFormat(d3.format("$.2s")).tickSizeOuter(0))
                 .append("text")
                 .attr("x", -height / 2)
                 .attr("y", -60)
@@ -178,8 +173,8 @@
         });
     </script>
     <p>
-        <h1> Disney Movie Scatterplot: Revenue and MPAA Rating</h1>
-        <svg id="scatterPlot" width="1000" height="500"></svg>
+    <h1> Disney Movie Scatterplot: Revenue and MPAA Rating</h1>
+    <svg id="scatterPlot" width="1000" height="500"></svg>
     </p>
     <script>
         d3.csv("disney_movies.csv", d3.autoType).then((data) => {
@@ -382,68 +377,63 @@
             console.log('Error:', error);
         });
     </script>
-    <p>
-        <h1>Disney Movie Line Graph: Revenue and Release Month</h1>
-        <svg id="lineGraph" width="960" height="500"></svg>
-    </p>
+    <h1>Disney Movie Line Graph: Revenue and Release Month</h1>
+    <svg id="lineGraph" width="960" height="500"></svg>
     <script>
         d3.csv('disney_movies.csv', d3.autoType).then((data) => {
             const filteredMovies = data.filter(movie => {
                 const releaseYear = new Date(movie.release_date).getFullYear();
                 return releaseYear >= 2000 && movie.total_gross > 0;
             });
-    
+
             const yearMovies = filteredMovies.map(movie => {
                 const releaseDate = new Date(movie.release_date);
                 return {
                     ...movie,
                     release_year: releaseDate.getFullYear(),
-                    release_month: releaseDate.getMonth() + 1 // +1 because months are zero-indexed
+                    release_month: releaseDate.getMonth() + 1
                 };
             });
-    
+
             const filteredYears = [2000, 2005, 2010, 2015];
             const filteredData = yearMovies.filter(d => filteredYears.includes(d.release_year));
-    
+
             const nestedData = d3.groups(filteredData, d => d.release_year);
 
-            nestedData.sort((a, b) => 
-            d3.sum(b[1], m => m.total_gross) - d3.sum(a[1], m => m.total_gross)
+            nestedData.sort((a, b) =>
+                d3.sum(b[1], m => m.total_gross) - d3.sum(a[1], m => m.total_gross)
             );
-    
+
             const margin = { top: 50, right: 150, bottom: 50, left: 80 };
             const width = 960 - margin.left - margin.right;
             const height = 500 - margin.top - margin.bottom;
-    
+
             const svg = d3.select("#lineGraph")
                 .attr("width", width + margin.left + margin.right)
                 .attr("height", height + margin.top + margin.bottom)
                 .append("g")
                 .attr("transform", `translate(${margin.left},${margin.top})`);
-    
-            const xScale = d3.scaleLinear().domain([1, 12]).range([0, width]);
+
+            const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const xScale = d3.scalePoint()
+                .domain(monthOrder)
+                .range([0, width])
+                .padding(0.5);
+
             const yScale = d3.scaleLinear()
                 .domain([0, d3.max(filteredData, d => d.total_gross)])
                 .range([height, 0]);
-    
-            // Sequential color scale with shades of blue
-            // const colorScale = d3.scaleSequential(d3.interpolateBlues)
-            // .domain([0, d3.max(nestedData, d => d3.sum(d[1], m => m.total_gross))]);
-            // const customColors = ['#C72C41', '#32CD32', '#A77BCA', '#FFA500' ];
 
-            // const colorScale = d3.scaleOrdinal()
-            //     .domain(filteredYears)
-            //     .range(customColors);
             const colorScale = d3.scaleOrdinal(d3.schemeSet3)
-            .domain(filteredYears); 
+                .domain(filteredYears);
 
             const opacityScale = d3.scaleLinear()
-            .domain([0, d3.max(nestedData, d => d3.sum(d[1], m => m.total_gross))])
-            .range([0.2, 1]);
-    
+                .domain([0, d3.max(nestedData, d => d3.sum(d[1], m => m.total_gross))])
+                .range([0.2, 1]);
+
             svg.append("g")
                 .attr("transform", `translate(0,${height})`)
-                .call(d3.axisBottom(xScale).ticks(12).tickFormat(d3.format("d")))
+                .call(d3.axisBottom(xScale).tickSizeOuter(0))
                 .style("font-size", "12px")
                 .append("text")
                 .attr("x", width / 2)
@@ -452,9 +442,9 @@
                 .attr("text-anchor", "middle")
                 .style("font-size", "18px")
                 .text('Month');
-    
+
             svg.append("g")
-                .call(d3.axisLeft(yScale).tickFormat(d3.format(".2s")))
+                .call(d3.axisLeft(yScale).tickFormat(d3.format(".2s")).tickSizeOuter(0))
                 .style("font-size", "12px")
                 .append("text")
                 .attr("x", -height / 2)
@@ -464,37 +454,48 @@
                 .attr("transform", "rotate(-90)")
                 .style("font-size", "18px")
                 .text("Revenue");
-                                                                                  
+
+            svg.append("g")
+                .attr("class", "grid")
+                .call(d3.axisLeft(yScale)
+                    .tickSize(-width)
+                    .tickFormat("")
+                );
+
+            svg.append("g")
+                .attr("class", "grid")
+                .attr("transform", `translate(0, ${height})`)
+                .call(d3.axisBottom(xScale)
+                    .tickSize(-height)
+                    .tickFormat("")
+                );
+
             const area = d3.area()
-                .x(d => xScale(d.release_month))
-                .y0(height) 
+                .x(d => xScale(monthOrder[d.release_month - 1]))
+                .y0(height)
                 .y1(d => yScale(d.total_gross));
-    
-        
+
             svg.selectAll(".area")
                 .data(nestedData)
-                .enter()
-                .append("path")
+                .join("path")
                 .attr("class", "area")
                 .attr("d", d => area(d[1]))
                 .style("fill", d => colorScale(d3.sum(d[1], m => m.total_gross)))
                 .style("opacity", d => opacityScale(d3.sum(d[1], m => m.total_gross)))
-                .style("stroke", d => d3.color(colorScale(d3.sum(d[1], m => m.total_gross))).darker(2)) 
-            .style("stroke-width", 1.5);
+                .style("stroke", d => d3.color(colorScale(d3.sum(d[1], m => m.total_gross))).darker(2))
+                .style("stroke-width", 1.5);
 
             const legendData = [
-            { year: "2000", color: colorScale(d3.sum(nestedData.find(d => d[0] === 2000)[1], m => m.total_gross)) },
-            { year: "2005", color: colorScale(d3.sum(nestedData.find(d => d[0] === 2005)[1], m => m.total_gross)) },
-            { year: "2010", color: colorScale(d3.sum(nestedData.find(d => d[0] === 2010)[1], m => m.total_gross)) },
-            { year: "2015", color: colorScale(d3.sum(nestedData.find(d => d[0] === 2015)[1], m => m.total_gross)) },
+                { year: "2000", color: colorScale(d3.sum(nestedData.find(d => d[0] === 2000)[1], m => m.total_gross)) },
+                { year: "2005", color: colorScale(d3.sum(nestedData.find(d => d[0] === 2005)[1], m => m.total_gross)) },
+                { year: "2010", color: colorScale(d3.sum(nestedData.find(d => d[0] === 2010)[1], m => m.total_gross)) },
+                { year: "2015", color: colorScale(d3.sum(nestedData.find(d => d[0] === 2015)[1], m => m.total_gross)) },
             ];
-    
-            // Legend
+
             const legend = svg.selectAll(".legend")
-            .data(legendData)
-            .enter()
-            .append("g")
-            .attr("transform", (d, i) => `translate(${width + 20}, ${i * 25})`);
+                .data(legendData)
+                .join("g")
+                .attr("transform", (d, i) => `translate(${width + 20}, ${i * 25})`);
 
             legend.append("rect")
                 .attr("x", 0)
@@ -514,5 +515,7 @@
             console.log('Error:', error);
         });
     </script>
+
 </body>
+
 </html>
