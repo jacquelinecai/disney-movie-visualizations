@@ -7,7 +7,7 @@ This bar chart visualizes Disney movies' total gross revenue per month, stacked 
 <img width="801" alt="IMG_5089" src="https://github.com/user-attachments/assets/0115876c-2a43-46bb-85d8-60d6f77ecb5e">
 
 ### Disney Movie Ratings Scatterplot
-This scatterplot utilizes the ratings of movies from the year 2000 and later to understand how the target audience of certain Disney movies impacts the revenue. Each point in the scatterplot will be marked as a circle, color-coded based on the rating (P, PG, R, etc.).
+This scatterplot utilizes the ratings of movies from the year 2000 and later to understand how the target audience of certain Disney movies impacts the revenue. Each point in the scatterplot is marked as a circle, color-coded based on the rating (P, PG, R, etc.).
 
 <img width="787" alt="image" src="https://github.com/user-attachments/assets/56f0a6fa-acd8-4d32-a1d4-b8e940337a54">
 
