@@ -130,7 +130,7 @@
                 .attr("fill", "#000")
                 .attr("text-anchor", "middle")
                 .style("font-size", "18px")
-                .text("Months");
+                .text("Month");
 
             svg.append("g")
                 .attr("class", "axis")
@@ -149,6 +149,7 @@
                 .call(d3.axisLeft(yScale)
                     .tickSize(-width)
                     .tickFormat("")
+                    .tickSizeOuter(0)
                 );
 
             const legend = svg.append("g")
@@ -204,14 +205,25 @@
             const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
             svg.append("g")
                 .attr("class", "axis")
-                .call(d3.axisLeft(yScale).tickFormat(d3.format("$.2s")));
+                .call(d3.axisLeft(yScale).tickFormat(d3.format("$.2s")).tickSizeOuter(0));
 
             svg.append("g")
                 .attr("class", "grid")
                 .call(d3.axisLeft(yScale)
                     .tickSize(-width)
-                    .tickFormat("") 
+                    .tickFormat("")
+                    .tickSizeOuter(0)
                 );
+
+            svg.append("g")
+                .attr("class", "grid")
+                .attr("transform", `translate(0, ${height})`)
+                .call(d3.axisBottom(xScale)
+                    .tickSize(-height)
+                    .tickFormat("")
+                    .tickSizeOuter(0)
+                );
+
             svg.selectAll("circle")
                 .data(filteredData)
                 .join("circle")
@@ -224,18 +236,18 @@
             svg.append("g")
                 .attr("class", "axis")
                 .attr("transform", `translate(0,${height})`)
-                .call(d3.axisBottom(xScale).tickFormat(d3.timeFormat("%Y")).ticks(d3.timeYear.every(1)))
-       
+                .call(d3.axisBottom(xScale).tickFormat(d3.timeFormat("%Y")).ticks(d3.timeYear.every(1)).tickSizeOuter(0))
+
 
             svg.append("text")
                 .attr("x", width / 2)
                 .attr("y", height + 50)
                 .attr("text-anchor", "middle")
-                .text("Release Date");
+                .text("Release Year");
 
             svg.append("g")
                 .attr("class", "axis")
-                .call(d3.axisLeft(yScale).tickFormat(d3.format("$.2s")))
+                .call(d3.axisLeft(yScale).tickFormat(d3.format("$.2s")).tickSizeOuter(0))
                 .append("text")
                 .attr("x", -height / 2)
                 .attr("y", -60)
@@ -467,6 +479,7 @@
                 .call(d3.axisLeft(yScale)
                     .tickSize(-width)
                     .tickFormat("")
+                    .tickSizeOuter(0)
                 );
 
             svg.append("g")
@@ -475,6 +488,7 @@
                 .call(d3.axisBottom(xScale)
                     .tickSize(-height)
                     .tickFormat("")
+                    .tickSizeOuter(0)
                 );
 
             const area = d3.area()
