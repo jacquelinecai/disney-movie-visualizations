@@ -199,7 +199,6 @@
 
             const yScale = d3.scaleLinear()
                 .domain([0, d3.max(filteredData, d => d.total_gross)])
-                .nice()
                 .range([height, 0]);
 
             const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
@@ -216,14 +215,14 @@
             svg.append("g")
                 .attr("class", "axis")
                 .attr("transform", `translate(0,${height})`)
-                .call(d3.axisBottom(xScale).tickFormat("").tickSize(0))
-                .append('text')
-                .attr('x', width / 2)
-                .attr('y', 40)
-                .attr('text-anchor', 'middle')
-                .attr('fill', '#000')
-                .style('font-size', '18px')
-                .text('Release Date (Earliest to Latest)');
+                .call(d3.axisBottom(xScale).tickFormat(d3.timeFormat("%Y")).ticks(d3.timeYear.every(1)))
+       
+
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", height + 50)
+                .attr("text-anchor", "middle")
+                .text("Release Date");
 
             svg.append("g")
                 .attr("class", "axis")
@@ -258,7 +257,6 @@
         }).catch(error => {
             console.log('Error:', error);
         });
-
     </script>
     <h1>Disney Movie Heatmap: Revenue and Genre</h1>
     <svg id="heatmap" width="1000" height="600"></svg>
